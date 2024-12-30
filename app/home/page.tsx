@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGetImages } from "../hooks/use-get-images";
+import { cn } from "@/lib/utils";
 
 const kottaFont = Kotta_One({
   subsets: ["latin"],
@@ -13,20 +13,29 @@ const kottaFont = Kotta_One({
 });
 
 const Home = () => {
+  const textAreaRef = useRef(null);
+  const [prompt, setPrompt] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const textAreaRef = useRef(null)
+  const [image, setImage] = useState("")
 
+  const handleGenerate = async () => {
+      setIsLoading(true);
+      const response = await fetch("/api/generate-image", {
+        method: "POST",
+        body: JSON.stringify({
+          prompt,
+        }),
+      });
 
-  const [prompt, setPrompt] = useState("")
-
-
-  const handleGenerate = async () =>{
-    // @ts-ignore
-    setPrompt(textAreaRef.current?.value)
-    console.log(prompt)
+      const data = await response.json();
+      console.log(data);
+      setImage(data.data[0].url);
+      setIsLoading(false);
     
+  };
 
-  }
+
 
 
 
@@ -35,26 +44,28 @@ const Home = () => {
       <p className={`${kottaFont.className} text-3xl text-muted/80`}>
         What you imagine to create?
       </p>
-      <motion.div className="w-3/5 h-2/4 relative bg-neutral-900 rounded-xl">
+      <motion.div className={cn("w-3/5 h-40 relative bg-neutral-900 rounded-xl overflow-hidden",
+        image && "h-fit"
+      )}>
         <div className="relative">
           <Textarea
             ref={textAreaRef}
+            onChange={(e) => setPrompt(e.target.value)}
             className="h-40 w-full focus:outline-none text-[16px] bg-neutral-800 border-white/10 border text-background/80 align-text-top resize-none rounded-xl"
             placeholder="Type your message..."
           />
           <Button
-          onClick={handleGenerate}
+            onClick={handleGenerate}
             className="absolute bottom-4 right-4"
             variant="outline"
+            disabled={isLoading || !prompt}
           >
             Generate
           </Button>
         </div>
-        <div className="flex justify-around items-center w-full my-auto h-[50%] gap-4 p-4 mt-4">
-
-                <Skeleton
-                  className="aspect-square w-1/4 rounded-xl bg-neutral-800"
-                />
+       <div className="flex justify-around items-center w-full my-auto h-[50%] gap-4 p-4 mt-4">
+       {image && <img src={image} alt="image" className="w-full h-full" />}
+       {!image && <Skeleton className="w-full h-full bg-neutral-900" />}
 
         </div>
       </motion.div>
